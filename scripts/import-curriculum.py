@@ -17,13 +17,8 @@ def clean(value):
 def number(value):
     return value if isinstance(value, (int, float)) else 0
 
-# Only punctuation and confirmed spelling variants are reconciled. Original forms remain recorded.
-aliases = {
-    'Байділдаева Ж': 'Байдилдаева Ж', 'Сағиева А': 'Сагиева А',
-    'Тұрсынханова С': 'Турсынханова С', 'Тұрсынбеков Е': 'Турсынбеков Е',
-    'Кулпеишова А': 'Кулпеишова А', 'Саттар.Акбар': 'Саттарханов Акб',
-    'Саттар.Акрам': 'Саттарханов Акр',
-}
+# Demo data uses normalized fictional names; no personal spelling aliases are retained.
+aliases = {}
 teachers = {}
 unparsed = []
 issues = []
@@ -35,14 +30,11 @@ def teacher_tokens(raw, source):
     raw = clean(raw)
     if not raw or raw in ['ТБ', 'Вакант', 'Оқытушының аты-жөні', 'ФИО препод.']:
         return []
-    raw = raw.replace('СартаеваГ', 'Сартаева Г').replace('РзуановаС', 'Рзуанова С').replace('Шымкентбаев Пешентаев А', 'Шымкентбаев; Пешентаев А')
     # Numeric prefixes are payment allocations in the source, not part of a name.
     chunks = re.findall(r'(\d+)?\s*([А-ЯЁӘҒҚҢӨҰҮҺІA-Z][а-яёәғқңөұүһіa-z.]+)(?:\s*([А-ЯЁӘҒҚҢӨҰҮҺІA-Z](?:[а-яёәғқңөұүһіa-z]+)?)[.]?)?', raw)
     result = []
     for weight, family, initial in chunks:
         name = clean(family.rstrip('.') + (' ' + initial.rstrip('.') if initial else ''))
-        if name in ['Саттар Акбар', 'Саттар Акрам']:
-            name = 'Саттарханов ' + ('Акб' if name.endswith('Акбар') else 'Акр')
         canonical = aliases.get(name, name)
         key = 'T-' + hashlib.sha256(canonical.encode()).hexdigest()[:10]
         if key not in teachers:

@@ -69,10 +69,10 @@
       key: 'admin',
       login: 'admin',
       role: 'admin',
-      name: workspace.adminName || 'Туребай Диана',
+      name: workspace.adminName || 'Айсана Нұрланқызы',
       id: 'ADM-001',
       department: 'Оқу бөлімі',
-      initials: (workspace.adminName || 'Туребай Диана')
+      initials: (workspace.adminName || 'Айсана Нұрланқызы')
         .split(' ')
         .map((x) => x[0])
         .slice(0, 2)

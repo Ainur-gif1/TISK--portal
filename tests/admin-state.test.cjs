@@ -10,3 +10,20 @@ test('Academic year and edited semester ranges project calendar dates rather tha
 test('Balanced substitution preserves teacher hours and sends notifications to teachers, students and both curators',()=>{const s=reset(),g=D.groupRecords.find(g=>g.curator?.teacherId),course=D.sourceCourses.find(c=>c.group===g.id),a=D.teachers[0].id,b=D.teachers[1].id;course.teacherIds=[a,b];const rows=[row('today',course,'2026-10-12',0,a),row('future',course,'2026-10-14',1,b)];const candidates=P.substitutionCandidates(rows,'today',b);assert.equal(candidates.length,1);const result=P.substitute(rows,s,'today',b,'future');assert.deepEqual(result[0].teachers,[b]);assert.deepEqual(result[1].teachers,[a]);for(const teacher of [a,b])assert.equal(result.filter(r=>r.teachers.includes(teacher)).length,rows.filter(r=>r.teachers.includes(teacher)).length);assert.equal(P.forUser(s,{role:'teacher',id:a}).length,1);assert.equal(P.forUser(s,{role:'teacher',id:b}).length,1);assert.equal(P.forUser(s,{role:'teacher',id:g.curator.teacherId}).length,1);assert.equal(P.forUser(s,{role:'student',group:g.id}).length,1);assert.equal(P.forUser(s,{role:'student',group:'unknown'}).length,0);const roomEdit=result.map(r=>r.id==='today'?{...r,room:'999А'}:r),undoRoom=P.restoreRow(roomEdit,rows,s,'today');assert.deepEqual(undoRoom,result);assert.equal(s.notifications.length,1);const restored=P.restoreRow(undoRoom,rows,s,'today');assert.deepEqual(restored,rows);assert.equal(s.notifications.length,2);assert.ok(!s.operations[0].active);});
 test('Substitution rejects an occupied replacement and never sends a notification for a failed swap',()=>{const s=reset(),g=D.groupRecords[0],course=D.sourceCourses.find(c=>c.group===g.id),other=D.sourceCourses.find(c=>c.group!==g.id&&c.shift===g.shift),a=D.teachers[0].id,b=D.teachers[1].id;course.teacherIds=[a,b];const rows=[row('today',course,'2026-10-12',0,a),row('future',course,'2026-10-14',1,b),row('busy',other,'2026-10-12',0,b)];assert.deepEqual(P.substitutionCandidates(rows,'today',b),[]);assert.throws(()=>P.substitute(rows,s,'today',b,'future'),/табылмады/);assert.equal(s.notifications.length,0);assert.equal(s.operations.length,0);});
 test('Active calendar uses every group nominal shift, including transcribed date-specific exceptions',()=>{const s=reset(),rows=P.fitCalendar(P.project(D.createDraft(),s.registry));assert.ok(rows.every(r=>D.details(r).shift===D.groupMap.get(D.byId(r.courseId).group).shift));assert.deepEqual(D.conflicts(rows),[]);});
+test('Legacy cached names refresh once while timetable and non-name edits survive',()=>{
+ const state=reset(),teacher=D.registryBase.staff[0],group=D.registryBase.groups[0];
+ delete state.fictionalNamesRevision;state.adminName='Бұрынғы әкімші';
+ state.registry.teachers[teacher.id]={name:'Бұрынғы оқытушы',displayName:'Бұрынғы оқытушы',department:'Демо бөлім'};
+ state.registry.groups[group.id]={curator:{...group.curator,curatorName:'Бұрынғы куратор'}};
+ state.schedule=[{id:'saved-lesson',room:'101А'}];
+ let value=JSON.stringify(state);const storage={getItem:()=>value,setItem:(key,next)=>{value=next;}};
+ const migrated=P.load(storage);
+ assert.equal(migrated.adminName,P.empty().adminName);
+ assert.equal(migrated.registry.teachers[teacher.id].name,undefined);
+ assert.equal(migrated.registry.teachers[teacher.id].displayName,undefined);
+ assert.equal(migrated.registry.teachers[teacher.id].department,'Демо бөлім');
+ assert.deepEqual(migrated.registry.groups[group.id].curator,group.curator);
+ assert.deepEqual(migrated.schedule,state.schedule);
+ migrated.adminName='Жаңа әкімші';P.save(migrated,storage);
+ assert.equal(P.load(storage).adminName,'Жаңа әкімші');
+});

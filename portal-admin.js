@@ -6,7 +6,8 @@
   function empty() {
     return {
       version: 1,
-      adminName: 'Туребай Диана',
+      fictionalNamesRevision: 1,
+      adminName: 'Айсана Нұрланқызы',
       calendar: { yearStart: 2026, holiday: '2026-12-16', holidays: ['2026-12-16'], ranges: {} },
       registry: { groups: {}, teachers: {}, courses: {}, addedGroups: [], addedTeachers: [] },
       notifications: [],
@@ -16,7 +17,22 @@
   }
   function load(storage = typeof localStorage !== 'undefined' ? localStorage : null) {
     try {
-      const state = { ...empty(), ...JSON.parse(storage?.getItem(key) || 'null') };
+      const saved = JSON.parse(storage?.getItem(key) || 'null');
+      const state = { ...empty(), ...saved };
+      if (saved && !saved.fictionalNamesRevision) {
+        // Refresh legacy cached identities without losing timetable or registry edits.
+        state.adminName = empty().adminName;
+        for (const teacher of D.registryBase.staff) {
+          const patch = state.registry?.teachers?.[teacher.id];
+          if (patch) for (const field of ['name', 'displayName', 'initials', 'aliases', 'sourceForms', 'curatorNames']) delete patch[field];
+        }
+        for (const group of D.registryBase.groups) {
+          const patch = state.registry?.groups?.[group.id];
+          if (patch?.curator) patch.curator = structuredClone(group.curator);
+        }
+        state.fictionalNamesRevision = 1;
+        storage?.setItem(key, JSON.stringify(state));
+      }
       state.calendar = { ...empty().calendar, ...state.calendar };
       if (!Array.isArray(state.calendar.holidays))
         state.calendar.holidays = state.calendar.holiday ? [state.calendar.holiday] : [];

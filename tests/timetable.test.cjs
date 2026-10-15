@@ -5,8 +5,8 @@ const schedule=D.createDraft();
 test('Archive import retains all source groups and named subjects, with source spelling',()=>{
   assert.equal(D.groups.length,79);assert.equal(new Set(D.groups).size,79);assert.equal(D.teachers.length,150);assert.equal(new Set(D.sourceCourses.map(c=>c.subject)).size,126);
   for(const group of ['КО9-26-20','КО-26-38Д','АЭ 9-24-08р'])assert.ok(D.groups.includes(group));
-  assert.ok(!D.teachers.some(t=>t.name==='Шымкентбаев Пешентаев'));
-  assert.ok(D.teachers.some(t=>t.name==='Шымкентбаев А'));
+  assert.equal(new Set(D.teachers.map(t=>t.name)).size,150);
+  assert.ok(D.teachers.some(t=>t.name==='Санжар Мейрамұлы'));
   assert.equal(S.excludedPracticeRows,390);
   assert.equal(D.issues.filter(i=>i.type==='hours').length,8);
 });
@@ -28,7 +28,7 @@ test('Annual schedule preserves source budgets and rejects new conflicts beyond 
 test('Impossible teacher capacity remains explicit, and vacant teacher does not invent a person',()=>{
   const pending=D.pending(schedule);assert.equal(pending.reduce((n,r)=>n+r.pairs,0),0);
   assert.ok(pending.every(r=>!['АӘД','НВП','Дала жиыны','Полевой сбор'].includes(D.byId(r.courseId).subject)));
-  const teacher=D.teachers.find(t=>t.name==='Тельгозин Д');
+  const teacher=D.teachers.find(t=>t.name==='Нұрлан Досжанұлы');
   assert.ok(schedule.filter(r=>r.semester===1&&r.teachers.includes(teacher.id)).length>300);
   assert.ok(schedule.filter(r=>r.semester===2&&r.teachers.includes(teacher.id)).length>300);
   assert.ok(schedule.filter(r=>r.unassigned).every(r=>r.teachers.length===0));
@@ -80,10 +80,10 @@ test('Unverified payment allocations stay explicit after photo overrides',()=>{
 
 test('September 30 preserves photographed teachers, shifts and distinct buildings',()=>{
   const rows=schedule.filter(row=>row.sourceRows?.length);assert.equal(rows.length,313);
-  const sagieva=D.teachers.find(t=>t.name==='Сагиева А'),her=rows.filter(row=>row.teachers.includes(sagieva.id));assert.equal(her.length,2);
+  const sagieva=D.teachers.find(t=>t.name==='Салтанат Қайратқызы'),her=rows.filter(row=>row.teachers.includes(sagieva.id));assert.equal(her.length,2);
   assert.deepEqual(her.map(row=>row.lesson).sort(),[0,1]);assert.ok(her.every(row=>D.byId(row.courseId).group==='КО-26-40Д'&&row.shift===2&&row.room==='404Б'));
   const english=rows.find(row=>D.byId(row.courseId).group==='АЭ9-26-06'&&row.lesson===0);
-  assert.equal(english.teachers.length,1);assert.ok(['Каленова Г','Орынбаева С'].includes(D.details(english).teacherNames[0]));assert.equal(D.roomKeys(english).length,1);
+  assert.equal(english.teachers.length,1);assert.ok(['Жансая Нұрбекқызы','Бекзат Қайратұлы'].includes(D.details(english).teacherNames[0]));assert.equal(D.roomKeys(english).length,1);
   assert.match(D.details(english).roomLabel,/(313|204) · А корпус/);assert.match(D.details(her[0]).roomLabel,/404 · Б корпус/);assert.equal(D.pairCount('2026-09-30'),4);
 });
 test('Room keys distinguish buildings and normalize Latin/Cyrillic input; new overlaps remain blocked',()=>{
