@@ -53,6 +53,9 @@
     schedule = structuredClone(baseline);
   }
   const serverAuth = globalThis.TISK_SERVER_AUTH !== false; // Only an explicit static-demo configuration enables browser login.
+  const demoTeacherNames = ['Айдос Нұрдәулетұлы', 'Меруерт Қанатқызы', 'Ерлан Бақытұлы', 'Гүлназ Серікқызы', 'Дәурен Асқарұлы'];
+  const demoStudentNames = ['Әлихан Мақсатұлы', 'Аружан Ермекқызы', 'Нұрасыл Даниярұлы', 'Інжу Маратқызы', 'Айзере Болатқызы'];
+  const nameInitials = (name) => name.split(' ').map((part) => part[0]).slice(0, 2).join('');
   let photos = readJSON('tisk-demo-photos', {}),
     USERS = {},
     groupStudents = [],
@@ -87,19 +90,24 @@
         id: 'GROUP-STUDENT-' + i,
         login: 'student' + String(i + 1).padStart(3, '0'),
         role: 'student',
-        name: 'Студент',
+        name: !serverAuth && demoStudentNames[i] ? demoStudentNames[i] : 'Студент',
         group: g.id,
         department: D.groupName(g.id),
-        initials: 'С',
+        initials: !serverAuth && demoStudentNames[i] ? nameInitials(demoStudentNames[i]) : 'С',
         color: '#e1e6f1'
       };
     });
-    const named = D.teachers.map((t) => ({
-      ...t,
-      key: t.id,
-      role: 'teacher',
-      name: t.displayName
-    }));
+    const named = D.teachers.map((t) => {
+      const demoIndex = /^teacher(\d+)$/.exec(t.login || '')?.[1];
+      const demoName = !serverAuth && demoTeacherNames[Number(demoIndex) - 1];
+      return {
+        ...t,
+        key: t.id,
+        role: 'teacher',
+        name: demoName || t.displayName,
+        initials: demoName ? nameInitials(demoName) : t.initials
+      };
+    });
     USERS = {
       admin,
       ...(firstTeacher

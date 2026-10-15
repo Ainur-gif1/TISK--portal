@@ -58,3 +58,18 @@ test('Every source group has its own documented demo login',()=>{
   for(const group of D.groupRecords){const i=D.registryBase.groups.findIndex(g=>g.id===group.id);assert.ok(i>=0);const login='student'+String(i+1).padStart(3,'0');assert.ok(!logins.has(login));logins.add(login);assert.ok(list.includes(`| ${group.name} | ${login} | TIK-${login}-2026 |`));}
   assert.equal(logins.size,79);
 });
+test('Five fictional Kazakh teacher and student profiles can sign in to the Pages demo',async()=>{
+  const get=renderRole(null,{}, {serverAuth:false,fetch:async()=>{throw Error('Demo must not use API')}});
+  const names={teacher:['Айдос Нұрдәулетұлы','Меруерт Қанатқызы','Ерлан Бақытұлы','Гүлназ Серікқызы','Дәурен Асқарұлы'],student:['Әлихан Мақсатұлы','Аружан Ермекқызы','Нұрасыл Даниярұлы','Інжу Маратқызы','Айзере Болатқызы']};
+  for(const [role,profiles] of Object.entries(names)){
+    for(const [i,name] of profiles.entries()){
+      const login=role+String(i+1).padStart(3,'0');
+      get('login').value=login;get('password').value=`TIK-${login}-2026`;
+      await submit(get);
+      assert.ok(get('root').innerHTML.includes(name),`${login} displays ${name}`);
+      assert.match(get('root').innerHTML,/id="logout"/);
+      assert.ok(!get('root').innerHTML.includes('data-page="groups"'));
+      await get('logout').onclick();
+    }
+  }
+});
