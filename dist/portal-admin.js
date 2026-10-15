@@ -6,8 +6,8 @@
   function empty() {
     return {
       version: 1,
-      fictionalNamesRevision: 1,
-      adminName: 'Айсана Нұрланқызы',
+      fictionalNamesRevision: 2,
+      adminName: 'Портал әкімшісі',
       calendar: { yearStart: 2026, holiday: '2026-12-16', holidays: ['2026-12-16'], ranges: {} },
       registry: { groups: {}, teachers: {}, courses: {}, addedGroups: [], addedTeachers: [] },
       notifications: [],
@@ -19,7 +19,7 @@
     try {
       const saved = JSON.parse(storage?.getItem(key) || 'null');
       const state = { ...empty(), ...saved };
-      if (saved && !saved.fictionalNamesRevision) {
+      if (saved && (saved.fictionalNamesRevision || 0) < 2) {
         // Refresh legacy cached identities without losing timetable or registry edits.
         state.adminName = empty().adminName;
         for (const teacher of D.registryBase.staff) {
@@ -30,7 +30,7 @@
           const patch = state.registry?.groups?.[group.id];
           if (patch?.curator) patch.curator = structuredClone(group.curator);
         }
-        state.fictionalNamesRevision = 1;
+        state.fictionalNamesRevision = 2;
         storage?.setItem(key, JSON.stringify(state));
       }
       state.calendar = { ...empty().calendar, ...state.calendar };

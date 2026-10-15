@@ -17,8 +17,8 @@ const adminHash = await bcrypt.hash(adminPassword, 12);
 await prisma.$transaction(async (tx) => {
   await tx.user.upsert({
     where: { username: adminUsername },
-    create: { id: "portal-admin", username: adminUsername, displayName: "Айсана Нұрланқызы", role: "ADMIN", passwordHash: adminHash, active: true },
-    update: { displayName: "Айсана Нұрланқызы", role: "ADMIN", active: true },
+    create: { id: "portal-admin", username: adminUsername, displayName: "Портал әкімшісі", role: "ADMIN", passwordHash: adminHash, active: true },
+    update: { displayName: "Портал әкімшісі", role: "ADMIN", active: true },
   });
 
   await tx.teacher.createMany({ data: D.teachers.map((teacher: any) => ({

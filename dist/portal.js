@@ -69,10 +69,10 @@
       key: 'admin',
       login: 'admin',
       role: 'admin',
-      name: workspace.adminName || 'Айсана Нұрланқызы',
+      name: workspace.adminName || 'Портал әкімшісі',
       id: 'ADM-001',
       department: 'Оқу бөлімі',
-      initials: (workspace.adminName || 'Айсана Нұрланқызы')
+      initials: (workspace.adminName || 'Портал әкімшісі')
         .split(' ')
         .map((x) => x[0])
         .slice(0, 2)
@@ -570,6 +570,9 @@
   }
 
   function authenticateDemoUser(login, password) {
+    if (login !== 'admin' && !/^(teacher|student)00[1-5]$/.test(login)) {
+      throw Error('Логин немесе құпиясөз қате.');
+    }
     const user = Object.values(USERS).find((account) => account.login === login);
     if (!user) throw Error('Логин немесе құпиясөз қате.');
 

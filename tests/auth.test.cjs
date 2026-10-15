@@ -51,15 +51,21 @@ test('Explicit Pages demo requires manual credentials for admin, teacher and gro
     await get('logout').onclick();assert.match(get('root').innerHTML,/id="loginForm"/);
   }
 });
-test('Every source group has its own documented demo login',()=>{
-  const fs=require('node:fs'),path=require('node:path'),D=require('../portal-data.js');
+test('Only approved demo accounts are documented',()=>{
+  const fs=require('node:fs'),path=require('node:path');
   const list=fs.readFileSync(path.join(__dirname,'..','DEMO_ACCOUNTS.md'),'utf8');
-  const logins=new Set();
-  for(const group of D.groupRecords){const i=D.registryBase.groups.findIndex(g=>g.id===group.id);assert.ok(i>=0);const login='student'+String(i+1).padStart(3,'0');assert.ok(!logins.has(login));logins.add(login);assert.ok(list.includes(`| ${group.name} | ${login} | TIK-${login}-2026 |`));}
-  assert.equal(logins.size,79);
+  const rows=list.split('\n').filter(line=>/\| (?:admin|teacher\d+|student\d+) \|/.test(line));
+  assert.equal(rows.length,11);
+  for(const role of ['teacher','student']) for(let i=1;i<=5;i++){
+    const login=role+String(i).padStart(3,'0');assert.ok(list.includes(`| ${login} | TIK-${login}-2026 |`));
+  }
 });
 test('Five fictional Kazakh teacher and student profiles can sign in to the Pages demo',async()=>{
   const get=renderRole(null,{}, {serverAuth:false,fetch:async()=>{throw Error('Demo must not use API')}});
+  for(const login of ['teacher006','student006','teacher','student']){
+    get('login').value=login;get('password').value=`TIK-${login}-2026`;await submit(get);
+    assert.match(get('root').innerHTML,/id="loginForm"/);
+  }
   const names={teacher:['Айдос Нұрдәулетұлы','Меруерт Қанатқызы','Ерлан Бақытұлы','Гүлназ Серікқызы','Дәурен Асқарұлы'],student:['Әлихан Мақсатұлы','Аружан Ермекқызы','Нұрасыл Даниярұлы','Інжу Маратқызы','Айзере Болатқызы']};
   for(const [role,profiles] of Object.entries(names)){
     for(const [i,name] of profiles.entries()){
