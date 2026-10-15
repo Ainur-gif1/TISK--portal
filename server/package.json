@@ -1,0 +1,42 @@
+{
+  "name": "tisk-college-portal-server",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": { "node": ">=24.11.0" },
+  "scripts": {
+    "dev": "node scripts/copy-portal.mjs && next dev",
+    "build": "node scripts/copy-portal.mjs && prisma generate && next build",
+    "start": "next start",
+    "db:generate": "prisma generate",
+    "db:migration:create": "prisma migrate dev",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:deploy": "npm run db:migrate && npm run db:seed",
+    "test:accounts": "node --test tests/bootstrap-accounts.test.mjs",
+    "accounts:bootstrap": "node scripts/bootstrap-accounts.mjs",
+    "user:set-password": "tsx scripts/set-password.ts",
+    "test": "node --test tests/*.test.cjs"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^17.2.3",
+    "next": "^16.3.0",
+    "pg": "^8.16.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "@types/pg": "^8.15.6",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "prisma": "^7.10.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  },
+  "prisma": { "seed": "tsx prisma/seed.ts" }
+}

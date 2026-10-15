@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+model User {
+  id             String       @id @default(cuid())
+  username       String       @unique
+  displayName    String
+  role           UserRole
+  passwordHash   String?
+  active         Boolean      @default(false)
+  teacherId      String?      @unique
+  studentNumber  String?      @unique
+  groupId        String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  teacher        Teacher?     @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  group          CollegeGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  sessions       Session[]
+  auditEvents    AuditEvent[]
+
+  @@index([role, active])
+  @@index([groupId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  username  String
+  ipHash    String
+  createdAt DateTime @default(now())
+
+  @@index([username, ipHash, createdAt])
+  @@index([createdAt])
+}
+
+model CollegeGroup {
+  id                  String      @id
+  name                String
+  year                Int
+  shift               Int
+  language            String
+  studentCount        Int          @default(0)
+  semesterDates       Json
+  curatorName         String?
+  curatorTeacherId    String?
+  sourceData          Json
+  teachers            TeacherGroup[]
+  users               User[]
+  courses             Course[]
+  lessons             Lesson[]
+
+  @@index([shift, year])
+}
+
+model Teacher {
+  id            String          @id
+  fullName      String
+  displayName   String
+  username      String?         @unique
+  sourceData    Json
+  user          User?
+  groups        TeacherGroup[]
+  courses       CourseTeacher[]
+  lessons       LessonTeacher[]
+}
+
+model TeacherGroup {
+  teacherId String
+  groupId   String
+  relation  String   @default("assigned")
+  teacher   Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  group     CollegeGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([teacherId, groupId])
+}
+
+model Course {
+  id          Int             @id
+  groupId     String
+  subject     String
+  module      String?
+  shortTitle  String?
+  semesters   Int[]
+  isAdditional Boolean        @default(false)
+  sourceData  Json
+  group       CollegeGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  teachers    CourseTeacher[]
+  lessons     Lesson[]
+
+  @@index([groupId, subject])
+}
+
+model CourseTeacher {
+  courseId  Int
+  teacherId String
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@id([courseId, teacherId])
+}
+
+model Lesson {
+  id          String          @id
+  courseId    Int
+  groupId     String
+  semester    Int
+  date        String          @db.VarChar(10)
+  pairIndex   Int
+  room        String          @default("")
+  isAdditional Boolean        @default(false)
+  isReference Boolean         @default(false)
+  sourceData  Json
+  course      Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  group       CollegeGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  teachers    LessonTeacher[]
+
+  @@index([groupId, date, pairIndex])
+  @@index([date, pairIndex])
+  @@index([courseId, semester])
+}
+
+model LessonTeacher {
+  lessonId  String
+  teacherId String
+  lesson    Lesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@id([lessonId, teacherId])
+  @@index([teacherId, lessonId])
+}
+
+model PortalSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model AuditEvent {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  entityType String
+  entityId   String
+  beforeData Json?
+  afterData  Json?
+  createdAt  DateTime @default(now())
+  actor      User     @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorId, createdAt])
+}
